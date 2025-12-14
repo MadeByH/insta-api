@@ -78,7 +78,7 @@ def get_explore(limit: int = 30, page: int = 1):
     # 2. جایگزینی ؟ با %s
     # 5. اضافه کردن ایندکس پیشنهادی برای بهینه سازی (idx_posts_feed)
     c.execute("""
-        SELECT post_id, user_id, type, photo, video_id, likes, COALESCE(candidate_score,0) as score, COALESCE(created_at, timestamp)
+        SELECT post_id, user_id, type, photo, video_id, likes, COALESCE(candidate_score,0) as score, created_at
         FROM posts
         ORDER BY score DESC, likes DESC, created_at DESC
         LIMIT %s OFFSET %s
