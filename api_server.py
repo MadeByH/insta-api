@@ -59,6 +59,17 @@ def row_to_post(r):
 # -----------------------
 # --- Read endpoints
 # -----------------------
+@app.get("/api/health")
+def health():
+    try:
+        conn = db_conn()
+        cur = conn.cursor()
+        cur.execute("SELECT 1")
+        conn.close()
+        return {"status": "ok"}
+    except Exception as e:
+        return {"status": "db_error", "error": str(e)}
+
 @app.get("/api/get_explore")
 def get_explore(limit: int = 30, page: int = 1):
     conn = db_conn()
