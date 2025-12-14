@@ -36,7 +36,7 @@ def db_conn():
     # اتصال به PostgreSQL
     # check_same_thread=False در psycopg2 لازم نیست، اما اگر نیاز به کانکشن پولینگ باشد، باید از AioPg یا Connection Pooler استفاده شود.
     # فعلاً برای سادگی، اتصال مستقیم در هر درخواست (که ایمن‌تر از sqlite در FastAPI است)
-    return psycopg2.connect(DATABASE_URL)
+    return psycopg2.connect(DATABASE_URL, sslmode="require")
 
 # -----------------------
 # --- Utilities
