@@ -93,7 +93,7 @@ def get_post(post_id: int):
     c = conn.cursor()
     # 2. جایگزینی ؟ با %s
     c.execute("""
-        SELECT post_id, user_id, type, photo, video_id, likes, COALESCE(candidate_score,0) as score, COALESCE(created_at, timestamp)
+        SELECT post_id, user_id, type, photo, video_id, likes, COALESCE(candidate_score,0) as score, created_at
         FROM posts WHERE post_id = %s
     """, (post_id,))
     r = c.fetchone()
@@ -141,7 +141,7 @@ def get_feed(user_id: int, limit: int = 30, page: int = 1):
     offset = (page-1)*limit
     # 2. جایگزینی ؟ با %s
     c.execute("""
-        SELECT p.post_id, p.user_id, p.type, p.photo, p.video_id, p.likes, COALESCE(p.candidate_score,0) as score, COALESCE(p.created_at, p.timestamp)
+        SELECT p.post_id, p.user_id, p.type, p.photo, p.video_id, p.likes, COALESCE(p.candidate_score,0) as score, p.created_at
         FROM posts p
         WHERE p.user_id IN (SELECT following_id FROM follows WHERE follower_id = %s)
         ORDER BY p.created_at DESC
@@ -271,7 +271,7 @@ def search(q: str, limit: int = 30):
     # 2. جایگزینی ؟ با %s
     # توجه: LIKE در Postgres به صورت case-insensitive نیست مگر با ILIKE. برای حفظ رفتار شبیه SQLite که case-insensitive بود، از ILIKE استفاده می‌شود.
     c.execute("""
-        SELECT post_id, user_id, type, photo, video_id, likes, COALESCE(candidate_score,0) as score, COALESCE(created_at, timestamp)
+        SELECT post_id, user_id, type, photo, video_id, likes, COALESCE(candidate_score,0) as score, created_at
         FROM posts
         WHERE caption ILIKE %s
         ORDER BY score DESC, created_at DESC
@@ -291,7 +291,7 @@ def get_user_posts(user_id: int, limit: int = 30, page: int = 1):
     offset = (page - 1) * limit
     # 2. جایگزینی ؟ با %s
     c.execute("""
-        SELECT post_id, user_id, type, photo, video_id, likes, COALESCE(candidate_score,0) as score, COALESCE(created_at, timestamp)
+        SELECT post_id, user_id, type, photo, video_id, likes, COALESCE(candidate_score,0) as score, created_at
         FROM posts
         WHERE user_id = %s
         ORDER BY created_at DESC
