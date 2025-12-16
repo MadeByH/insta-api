@@ -70,6 +70,56 @@ def health():
     except Exception as e:
         return {"status": "db_error", "error": str(e)}
 
+@app.get("/api/user_exists/{user_id}")
+def user_exists(user_id: int):
+    conn = db_conn()
+    c = conn.cursor()
+    c.execute("SELECT 1 FROM users WHERE user_id = %s", (user_id,))
+    exists = c.fetchone()
+    conn.close()
+    return {"exists": bool(exists)}
+
+class RegisterModel(BaseModel):
+    user_id: int
+    username: str
+    display_name: str
+    bio: Optional[str] = ""
+    profile_pic: Optional[str] = None
+
+
+@app.post("/api/register")
+def register_user(body: RegisterModel):
+    conn = db_conn()
+    c = conn.cursor()
+
+    # قبلاً ثبت شده؟
+    c.execute("SELECT 1 FROM users WHERE user_id = %s", (body.user_id,))
+    if c.fetchone():
+        conn.close()
+        return {"status": "already_registered"}
+
+    # یوزرنیم تکراری؟
+    c.execute("SELECT 1 FROM users WHERE username = %s", (body.username,))
+    if c.fetchone():
+        conn.close()
+        raise HTTPException(status_code=409, detail="username_taken")
+
+    c.execute("""
+        INSERT INTO users
+        (user_id, username, display_name, bio, profile_pic)
+        VALUES (%s, %s, %s, %s, %s)
+    """, (
+        body.user_id,
+        body.username,
+        body.display_name,
+        body.bio,
+        body.profile_pic
+    ))
+
+    conn.commit()
+    conn.close()
+    return {"status": "ok"}
+
 @app.get("/api/get_explore")
 def get_explore(limit: int = 30, page: int = 1):
     conn = db_conn()
