@@ -120,6 +120,25 @@ def register_user(body: RegisterModel):
     conn.close()
     return {"status": "ok"}
 
+from fastapi import UploadFile, File
+import uuid
+
+@app.post("/api/upload")
+async def upload_file(file: UploadFile = File(...)):
+    """
+    فایل را می‌گیرد و فقط file_id برمی‌گرداند
+    (فرض: فایل مستقیماً در بله ذخیره می‌شود)
+    """
+
+    # اینجا چون miniapp هستیم،
+    # در واقع باید file_id بله رو ذخیره کنیم
+    # ولی فعلاً ساده: اسم یکتا تولید می‌کنیم
+    fake_file_id = f"profile_{uuid.uuid4().hex}"
+
+    return {
+        "file_id": fake_file_id
+    }
+
 @app.get("/api/get_explore")
 def get_explore(limit: int = 30, page: int = 1):
     conn = db_conn()
