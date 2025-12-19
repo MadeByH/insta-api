@@ -173,7 +173,7 @@ def get_post(post_id: int):
     conn = db_conn()
     c = conn.cursor()
     # 2. جایگزینی ؟ با %s
-    c.execute("SELECT comments.comment_id, comments.user_id, users.username, comments.text, comments.timestamp FROM comments LEFT JOIN users ON comments.user_id = users.user_id WHERE post_id = %s ORDER BY comment_id ASC", (post_id,))
+    c.execute("SELECT comments.comment_id, comments.user_id, users.username, comments.text, comments.created_at FROM comments LEFT JOIN users ON comments.user_id = users.user_id WHERE post_id = %s ORDER BY comment_id ASC", (post_id,))
     # تاریخ‌ها را برای JSON سازگاری آماده می‌کنیم
     comments = [{"comment_id": row[0], "user_id": row[1], "username": row[2], "text": row[3], "timestamp": row[4].isoformat() if hasattr(row[4], 'isoformat') else str(row[4])} for row in c.fetchall()]
     conn.close()
