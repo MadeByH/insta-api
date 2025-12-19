@@ -183,6 +183,27 @@ def get_explore(limit: int = 30, page: int = 1):
     conn.close()
     return [row_to_post(r) for r in rows]
 
+@app.get("/api/explore")
+def explore():
+    conn = db_conn()
+    c = conn.cursor()
+
+    c.execute("""
+      SELECT post_id, photo
+      FROM posts
+      WHERE is_candidate = false
+      ORDER BY candidate_score DESC, created_at DESC
+      LIMIT 60
+    """)
+
+    rows = c.fetchall()
+    conn.close()
+
+    return [
+      {"post_id":r[0], "photo":r[1]}
+      for r in rows
+    ]
+
 @app.get("/api/get_post/{post_id}")
 def get_post(post_id: int):
     conn = db_conn()
