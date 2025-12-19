@@ -202,6 +202,37 @@ def get_user(user_id: int):
     }
     return user
 
+from pydantic import BaseModel
+
+class UpdateProfileModel(BaseModel):
+    user_id: int
+    display_name: str
+    bio: str | None = ""
+    profile_pic: str | None = None
+
+@app.post("/api/update_profile")
+def update_profile(body: UpdateProfileModel):
+    conn = db_conn()
+    c = conn.cursor()
+
+    c.execute("""
+      UPDATE users
+      SET display_name=%s,
+          bio=%s,
+          profile_pic=%s
+      WHERE user_id=%s
+    """, (
+        body.display_name,
+        body.bio,
+        body.profile_pic,
+        body.user_id
+    ))
+
+    conn.commit()
+    conn.close()
+
+    return {"status": "ok"}
+
 @app.get("/api/get_feed/{user_id}")
 def get_feed(user_id: int, limit: int = 30, page: int = 1):
     # posts from people the user follows
