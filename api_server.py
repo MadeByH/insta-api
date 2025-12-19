@@ -139,6 +139,31 @@ async def upload_file(file: UploadFile = File(...)):
         "file_id": fake_file_id
     }
 
+class CreatePostModel(BaseModel):
+    user_id: int
+    type: str
+    photo: str
+    caption: str = ""
+
+@app.post("/api/create_post")
+def create_post(body: CreatePostModel):
+    conn = db_conn()
+    c = conn.cursor()
+
+    c.execute("""
+      INSERT INTO posts (user_id, type, photo, caption)
+      VALUES (%s, %s, %s, %s)
+    """, (
+        body.user_id,
+        body.type,
+        body.photo,
+        body.caption
+    ))
+
+    conn.commit()
+    conn.close()
+    return {"status":"ok"}
+
 @app.get("/api/get_explore")
 def get_explore(limit: int = 30, page: int = 1):
     conn = db_conn()
