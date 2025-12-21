@@ -56,6 +56,23 @@ def row_to_post(r):
         "created_at": r[7].isoformat() if hasattr(r[7], 'isoformat') else str(r[7])
     }
 
+def row_to_post_full(r):
+    return {
+        "post_id": r[0],
+        "user": {
+            "id": r[1],
+            "username": r[2],
+            "display_name": r[3],
+            "avatar": r[4],
+        },
+        "type": r[5],
+        "photo": r[6],
+        "video_id": r[7],
+        "likes": r[8],
+        "score": r[9] if r[9] is not None else 0,
+        "created_at": r[10].isoformat() if hasattr(r[10], "isoformat") else str(r[10])
+}
+
 # -----------------------
 # --- Read endpoints
 # -----------------------
@@ -210,8 +227,21 @@ def get_post(post_id: int):
     c = conn.cursor()
     # 2. جایگزینی ؟ با %s
     c.execute("""
-        SELECT post_id, user_id, type, photo, video_id, likes, COALESCE(candidate_score,0) as score, created_at
-        FROM posts WHERE post_id = %s
+        SELECT 
+    p.post_id,
+    p.user_id,
+    u.username,
+    u.display_name,
+    u.profile_pic,
+    p.type,
+    p.photo,
+    p.video_id,
+    p.likes,
+    COALESCE(p.candidate_score,0),
+    p.created_at
+FROM posts p
+LEFT JOIN users u ON p.user_id = u.user_id
+WHERE p.post_id = %s
     """, (post_id,))
     r = c.fetchone()
     conn.close()
@@ -225,7 +255,7 @@ def get_post(post_id: int):
     # تاریخ‌ها را برای JSON سازگاری آماده می‌کنیم
     comments = [{"comment_id": row[0], "user_id": row[1], "username": row[2], "text": row[3], "timestamp": row[4].isoformat() if hasattr(row[4], 'isoformat') else str(row[4])} for row in c.fetchall()]
     conn.close()
-    post = row_to_post(r)
+    post = row_to_post_full(r)
     post["comments"] = comments
     return post
 
