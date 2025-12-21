@@ -413,6 +413,20 @@ def comment_post(body: CommentModel):
     conn.close()
     return {"status": "ok"}
 
+@app.post("/api/delete_comment")
+def delete_comment(comment_id: int, user_id: int):
+    conn = db_conn()
+    c = conn.cursor()
+
+    c.execute("""
+      DELETE FROM comments
+      WHERE comment_id=%s AND user_id=%s
+    """, (comment_id, user_id))
+
+    conn.commit()
+    conn.close()
+    return {"status": "ok"}
+
 @app.post("/api/save")
 def save_post(body: LikeModel):
     conn = db_conn()
