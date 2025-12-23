@@ -222,7 +222,7 @@ def explore():
     ]
 
 @app.get("/api/get_post/{post_id}")
-def get_post(post_id: int):
+def get_post(post_id: int, viewer_id: int | None = None):
     conn = db_conn()
     c = conn.cursor()
     # 2. جایگزینی ؟ با %s
@@ -257,6 +257,26 @@ WHERE p.post_id = %s
     conn.close()
     post = row_to_post_full(r)
     post["comments"] = comments
+    is_liked = False
+    is_saved = False
+
+    if viewer_id:
+    # check like
+        c.execute(
+        "SELECT 1 FROM likes WHERE user_id=%s AND post_id=%s",
+        (viewer_id, post_id)
+    )
+        is_liked = bool(c.fetchone())
+
+    # check save
+        c.execute(
+        "SELECT 1 FROM saved_posts WHERE user_id=%s AND post_id=%s",
+        (viewer_id, post_id)
+    )
+        is_saved = bool(c.fetchone())
+
+    post["is_liked"] = is_liked
+    post["is_saved"] = is_saved
     return post
 
 @app.get("/api/get_user/{user_id}")
@@ -370,6 +390,7 @@ class CommentModel(BaseModel):
     user_id: int
     post_id: int
     text: str
+    #parent_id: int | None = None
 
 @app.post("/api/like")
 def like_post(body: LikeModel):
@@ -413,15 +434,19 @@ def comment_post(body: CommentModel):
     conn.close()
     return {"status": "ok"}
 
+class DeleteCommentModel(BaseModel):
+    comment_id: int
+    user_id: int
+
 @app.post("/api/delete_comment")
-def delete_comment(comment_id: int, user_id: int):
+def delete_comment(body: DeleteCommentModel):
     conn = db_conn()
     c = conn.cursor()
 
     c.execute("""
       DELETE FROM comments
       WHERE comment_id=%s AND user_id=%s
-    """, (comment_id, user_id))
+    """, (body.comment_id, body.user_id))
 
     conn.commit()
     conn.close()
