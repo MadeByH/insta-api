@@ -225,58 +225,78 @@ def explore():
 def get_post(post_id: int, viewer_id: int | None = None):
     conn = db_conn()
     c = conn.cursor()
-    # 2. جایگزینی ؟ با %s
+
+    # --- پست ---
     c.execute("""
         SELECT 
-    p.post_id,
-    p.user_id,
-    u.username,
-    u.display_name,
-    u.profile_pic,
-    p.type,
-    p.photo,
-    p.video_id,
-    p.likes,
-    COALESCE(p.candidate_score,0),
-    p.created_at
-FROM posts p
-LEFT JOIN users u ON p.user_id = u.user_id
-WHERE p.post_id = %s
+            p.post_id,
+            p.user_id,
+            u.username,
+            u.display_name,
+            u.profile_pic,
+            p.type,
+            p.photo,
+            p.video_id,
+            p.likes,
+            COALESCE(p.candidate_score,0),
+            p.created_at
+        FROM posts p
+        LEFT JOIN users u ON p.user_id = u.user_id
+        WHERE p.post_id = %s
     """, (post_id,))
+
     r = c.fetchone()
-    conn.close()
     if not r:
+        conn.close()
         raise HTTPException(status_code=404, detail="post not found")
-    # fetch comments
-    conn = db_conn()
-    c = conn.cursor()
-    # 2. جایگزینی ؟ با %s
-    c.execute("SELECT comments.comment_id, comments.user_id, users.username, comments.text, comments.created_at FROM comments LEFT JOIN users ON comments.user_id = users.user_id WHERE post_id = %s ORDER BY comment_id ASC", (post_id,))
-    # تاریخ‌ها را برای JSON سازگاری آماده می‌کنیم
-    comments = [{"comment_id": row[0], "user_id": row[1], "username": row[2], "text": row[3], "timestamp": row[4].isoformat() if hasattr(row[4], 'isoformat') else str(row[4])} for row in c.fetchall()]
-    conn.close()
+
     post = row_to_post_full(r)
-    post["comments"] = comments
-    is_liked = False
-    is_saved = False
+
+    # --- کامنت‌ها ---
+    c.execute("""
+        SELECT
+            comments.comment_id,
+            comments.user_id,
+            users.username,
+            users.display_name,
+            comments.text,
+            comments.created_at
+        FROM comments
+        LEFT JOIN users ON comments.user_id = users.user_id
+        WHERE post_id = %s
+        ORDER BY comment_id ASC
+    """, (post_id,))
+
+    post["comments"] = [
+        {
+            "comment_id": row[0],
+            "user_id": row[1],
+            "username": row[2],
+            "display_name": row[3],
+            "text": row[4],
+            "timestamp": row[5].isoformat()
+        }
+        for row in c.fetchall()
+    ]
+
+    # --- لایک / سیو ---
+    post["is_liked"] = False
+    post["is_saved"] = False
 
     if viewer_id:
-    # check like
         c.execute(
-        "SELECT 1 FROM likes WHERE user_id=%s AND post_id=%s",
-        (viewer_id, post_id)
-    )
-        is_liked = bool(c.fetchone())
+            "SELECT 1 FROM likes WHERE user_id=%s AND post_id=%s",
+            (viewer_id, post_id)
+        )
+        post["is_liked"] = bool(c.fetchone())
 
-    # check save
         c.execute(
-        "SELECT 1 FROM saved_posts WHERE user_id=%s AND post_id=%s",
-        (viewer_id, post_id)
-    )
-        is_saved = bool(c.fetchone())
+            "SELECT 1 FROM saved_posts WHERE user_id=%s AND post_id=%s",
+            (viewer_id, post_id)
+        )
+        post["is_saved"] = bool(c.fetchone())
 
-    post["is_liked"] = is_liked
-    post["is_saved"] = is_saved
+    conn.close()
     return post
 
 @app.get("/api/get_user/{user_id}")
