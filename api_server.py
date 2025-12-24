@@ -351,6 +351,28 @@ def update_profile(body: UpdateProfileModel):
 
     return {"status": "ok"}
 
+class UpdateProfilePicModel(BaseModel):
+    user_id: int
+    profile_pic: str
+
+@app.post("/api/update_profile_pic")
+def update_profile_pic(body: UpdateProfilePicModel):
+    conn = db_conn()
+    c = conn.cursor()
+
+    c.execute("""
+      UPDATE users
+      SET profile_pic=%s
+      WHERE user_id=%s
+    """, (
+        body.profile_pic,
+        body.user_id
+    ))
+
+    conn.commit()
+    conn.close()
+    return {"status": "ok"}
+
 @app.get("/api/get_feed/{user_id}")
 def get_feed(user_id: int, limit: int = 30, page: int = 1):
     # posts from people the user follows
